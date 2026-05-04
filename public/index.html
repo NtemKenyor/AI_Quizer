@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>QuizAI</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <div id="app">
+
+      <!-- ═══ CAMERA SECTION ═══ -->
+      <div id="cam-section">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas"></canvas>
+
+        <!-- Scan overlay -->
+        <div id="overlay">
+          <div id="scan-box">
+            <div class="corner tl"></div>
+            <div class="corner tr"></div>
+            <div class="corner bl"></div>
+            <div class="corner br"></div>
+            <div id="scan-line"></div>
+          </div>
+
+          <div id="status-badge">
+            <span id="status-dot"></span>
+            <span id="status-text">IDLE</span>
+          </div>
+
+          <div id="zoom-label">1.0×</div>
+
+          <div id="diff-bar">
+            <div id="diff-fill"></div>
+            <span id="diff-label">0%</span>
+          </div>
+
+          <div id="cooldown-bar" style="display:none">
+            <div id="cooldown-fill"></div>
+          </div>
+        </div>
+
+        <!-- Floating manual trigger button -->
+        <button id="manual-btn" title="Capture now (manual)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="13" r="3.5"/>
+            <path d="M20 7h-3.5L14 4H10L7.5 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+          </svg>
+        </button>
+
+        <!-- No camera state -->
+        <div id="no-cam">
+          <div id="no-cam-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+          <p>Camera access needed</p>
+          <small>Point this device at your quiz screen</small>
+          <button id="start-cam-btn">Enable Camera</button>
+        </div>
+      </div>
+
+      <!-- ═══ SETTINGS PANEL ═══ -->
+      <div id="settings-panel">
+        <div class="settings-header">
+          <span>Settings</span>
+          <button id="settings-close">✕</button>
+        </div>
+
+        <div class="settings-body">
+          <div class="setting-group">
+            <label class="setting-label">Scan Interval</label>
+            <div class="setting-row">
+              <input type="range" id="s-interval" min="1" max="10" step="1" value="3" />
+              <span class="setting-val" id="s-interval-val">3s</span>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Change Sensitivity</label>
+            <div class="setting-row">
+              <input type="range" id="s-diff" min="1" max="25" step="1" value="6" />
+              <span class="setting-val" id="s-diff-val">6%</span>
+            </div>
+            <small class="setting-hint">Lower = more sensitive to screen changes</small>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Answer Cooldown</label>
+            <div class="setting-row">
+              <input type="range" id="s-cooldown" min="2" max="12" step="1" value="4" />
+              <span class="setting-val" id="s-cooldown-val">4s</span>
+            </div>
+            <small class="setting-hint">Wait time after each answer before re-scanning</small>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Camera Zoom</label>
+            <div class="setting-row">
+              <input type="range" id="s-zoom" min="10" max="30" step="1" value="10" />
+              <span class="setting-val" id="s-zoom-val">1.0×</span>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Camera Source</label>
+            <select id="s-cam">
+              <option value="">Default camera</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Image Quality</label>
+            <div class="setting-row">
+              <input type="range" id="s-quality" min="3" max="9" step="1" value="6" />
+              <span class="setting-val" id="s-quality-val">0.6</span>
+            </div>
+            <small class="setting-hint">Higher = better accuracy, slower + costs more</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ ANSWER SECTION ═══ -->
+      <div id="answer-section">
+        <div id="answer-box">
+          <div id="answer-inner">
+            <div id="answer-label">ANSWER</div>
+            <div id="answer-text" data-state="idle">Waiting for question...</div>
+          </div>
+          <div id="answer-meta">
+            <span id="answer-time"></span>
+          </div>
+        </div>
+
+        <div id="controls">
+          <button id="settings-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            Settings
+          </button>
+
+          <div id="mode-display">
+            <span id="mode-text">Manual</span>
+          </div>
+
+          <div id="auto-toggle" role="button" tabindex="0" aria-label="Toggle auto mode">
+            <span id="auto-label">AUTO</span>
+            <div id="auto-switch">
+              <div id="auto-knob"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- #app -->
+
+    <script src="/js/app.js"></script>
+  </body>
+</html>

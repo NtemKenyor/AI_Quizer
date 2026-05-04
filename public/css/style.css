@@ -1,0 +1,555 @@
+/* ─── Reset & Base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --green: #00ffa0;
+  --green-dim: rgba(0, 255, 160, 0.15);
+  --green-border: rgba(0, 255, 160, 0.35);
+  --red: #ff5f5f;
+  --amber: #ffcc44;
+  --bg: #080808;
+  --bg2: #0f0f0f;
+  --bg3: #161616;
+  --border: rgba(255,255,255,0.07);
+  --text: #f0f0f0;
+  --text-dim: rgba(255,255,255,0.4);
+  --text-faint: rgba(255,255,255,0.18);
+  --font: 'Courier New', 'Lucida Console', monospace;
+  --radius: 8px;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  overflow: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ─── App Shell ─────────────────────────────────────────────── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ─── Camera Section ────────────────────────────────────────── */
+#cam-section {
+  position: relative;
+  flex: 1;
+  background: #000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+#video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+#canvas { display: none; }
+
+/* ─── Overlay ───────────────────────────────────────────────── */
+#overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Scan box */
+#scan-box {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -52%);
+  width: 82%;
+  height: 54%;
+  border: 1px solid rgba(0, 255, 160, 0.25);
+  border-radius: var(--radius);
+}
+
+/* Corners */
+.corner {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-color: var(--green);
+  border-style: solid;
+}
+.corner.tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; border-radius: 5px 0 0 0; }
+.corner.tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; border-radius: 0 5px 0 0; }
+.corner.bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; border-radius: 0 0 0 5px; }
+.corner.br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; border-radius: 0 0 5px 0; }
+
+/* Scan line animation */
+#scan-line {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, var(--green) 40%, var(--green) 60%, transparent 100%);
+  top: 10%;
+  opacity: 0;
+}
+
+#scan-line.scanning {
+  animation: scanline 2.2s ease-in-out infinite;
+  opacity: 1;
+}
+
+@keyframes scanline {
+  0%   { top: 6%;  opacity: 0.3; }
+  15%  { opacity: 0.9; }
+  85%  { opacity: 0.9; }
+  100% { top: 90%; opacity: 0.3; }
+}
+
+/* Status badge */
+#status-badge {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--green-border);
+  border-radius: 20px;
+  padding: 5px 14px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+#status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
+}
+
+#status-dot.red   { background: var(--red); box-shadow: 0 0 4px var(--red); }
+#status-dot.amber { background: var(--amber); box-shadow: 0 0 4px var(--amber); }
+#status-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 1.2s infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+#status-text {
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--green);
+}
+
+/* Zoom label */
+#zoom-label {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+  background: rgba(0,0,0,0.5);
+  padding: 3px 7px;
+  border-radius: 4px;
+}
+
+/* Diff bar */
+#diff-bar {
+  position: absolute;
+  bottom: 8px;
+  left: 12px;
+  right: 12px;
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: visible;
+}
+
+#diff-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--green);
+  border-radius: 2px;
+  transition: width 0.25s ease, background 0.2s;
+}
+
+#diff-fill.low  { background: rgba(255,255,255,0.2); }
+#diff-fill.high { background: var(--green); box-shadow: 0 0 4px var(--green); }
+
+#diff-label {
+  position: absolute;
+  right: 0;
+  bottom: 6px;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+/* Cooldown bar */
+#cooldown-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255,255,255,0.05);
+}
+
+#cooldown-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--amber);
+  transform-origin: left;
+  transition: transform linear;
+}
+
+/* ─── Manual Trigger Button ─────────────────────────────────── */
+#manual-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.6);
+  border: 1.5px solid var(--green-border);
+  color: var(--green);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  backdrop-filter: blur(4px);
+}
+
+#manual-btn svg { width: 22px; height: 22px; }
+
+#manual-btn:hover  { background: var(--green-dim); border-color: var(--green); }
+#manual-btn:active { transform: translateY(-50%) scale(0.9); background: rgba(0,255,160,0.3); }
+
+#manual-btn.firing {
+  border-color: var(--green);
+  background: var(--green-dim);
+  box-shadow: 0 0 12px rgba(0,255,160,0.3);
+}
+
+/* ─── No Camera State ───────────────────────────────────────── */
+#no-cam {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #050505;
+}
+
+#no-cam-icon svg {
+  width: 48px;
+  height: 48px;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+
+#no-cam p {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+#no-cam small {
+  font-size: 12px;
+  color: var(--text-faint);
+  text-align: center;
+  padding: 0 30px;
+}
+
+#start-cam-btn {
+  margin-top: 10px;
+  background: var(--green-dim);
+  border: 1px solid var(--green-border);
+  color: var(--green);
+  border-radius: var(--radius);
+  padding: 10px 28px;
+  font-size: 13px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#start-cam-btn:hover   { background: rgba(0,255,160,0.25); }
+#start-cam-btn:active  { background: rgba(0,255,160,0.35); }
+
+/* ─── Settings Panel ────────────────────────────────────────── */
+#settings-panel {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  z-index: 100;
+  max-height: 70dvh;
+  overflow-y: auto;
+}
+
+#settings-panel.open { display: block; }
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  position: sticky;
+  top: 0;
+  background: var(--bg2);
+}
+
+.settings-header button {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.settings-header button:hover { color: var(--text); }
+
+.settings-body { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 16px; }
+
+.setting-group { display: flex; flex-direction: column; gap: 6px; }
+
+.setting-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.setting-row input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 3px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  outline: none;
+}
+
+.setting-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--green);
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0,255,160,0.4);
+}
+
+.setting-row input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--green);
+  cursor: pointer;
+  border: none;
+}
+
+.setting-val {
+  font-size: 12px;
+  color: var(--green);
+  min-width: 36px;
+  text-align: right;
+}
+
+.setting-hint {
+  font-size: 10px;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+
+#s-cam {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 12px;
+  font-family: var(--font);
+  outline: none;
+  cursor: pointer;
+}
+
+/* ─── Answer Section ────────────────────────────────────────── */
+#answer-section {
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 12px 14px 10px;
+  flex-shrink: 0;
+}
+
+#answer-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  min-height: 68px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+#answer-box::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--green);
+  border-radius: 2px 0 0 2px;
+  transition: background 0.3s;
+}
+
+#answer-box.thinking::before { background: var(--amber); animation: pulse 0.8s infinite; }
+#answer-box.error::before    { background: var(--red); }
+#answer-box.idle::before     { background: var(--text-faint); }
+
+#answer-inner { flex: 1; }
+
+#answer-label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--text-faint);
+  margin-bottom: 5px;
+}
+
+#answer-text {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--green);
+  line-height: 1.3;
+  letter-spacing: 0.3px;
+  word-break: break-word;
+  transition: color 0.3s;
+}
+
+#answer-text[data-state="idle"]     { font-size: 13px; color: var(--text-faint); font-weight: normal; }
+#answer-text[data-state="thinking"] { font-size: 13px; color: var(--amber); font-weight: normal; animation: pulse 0.7s infinite; }
+#answer-text[data-state="error"]    { font-size: 13px; color: var(--red); font-weight: normal; }
+#answer-text[data-state="answer"]   { font-size: 20px; color: var(--green); font-weight: bold; }
+
+#answer-meta { text-align: right; flex-shrink: 0; }
+#answer-time { font-size: 10px; color: var(--text-faint); }
+
+/* ─── Controls Row ──────────────────────────────────────────── */
+#controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#settings-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 11px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  letter-spacing: 0.3px;
+}
+#settings-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+#settings-btn:active { background: rgba(255,255,255,0.12); }
+
+#mode-display {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.5px;
+}
+
+#auto-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+#auto-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+}
+
+#auto-switch {
+  width: 36px;
+  height: 20px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.25s;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+#auto-switch.on {
+  background: rgba(0,255,160,0.3);
+  border-color: var(--green-border);
+}
+
+#auto-knob {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  top: 2px;
+  left: 2px;
+  transition: left 0.25s, background 0.25s;
+}
+
+#auto-switch.on #auto-knob {
+  left: 18px;
+  background: var(--green);
+  box-shadow: 0 0 5px rgba(0,255,160,0.5);
+}
