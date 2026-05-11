@@ -23,6 +23,11 @@ app.post("/api/analyze", async (req, res) => {
     return res.status(400).json({ error: "No image provided" });
   }
 
+  // logic to strip the prefix
+  // This splits the string at the comma and takes the second part
+  const base64Image = image.includes(",") ? image.split(",")[1] : image;
+
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey === "your_api_key_here") {
     return res.status(500).json({
@@ -91,6 +96,56 @@ Rules:
     res.status(500).json({ error: "Server error: " + err.message });
   }
 });
+
+/* app.post("/api/analyze", async (req, res) => {
+  const { image } = req.body; // This contains the "data:image/jpeg;base64,..."
+
+  if (!image) {
+    return res.status(400).json({ error: "No image provided" });
+  }
+
+  // logic to strip the prefix
+  // This splits the string at the comma and takes the second part
+  const base64Image = image.includes(",") ? image.split(",")[1] : image;
+
+  // ... (API Key checks)
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: "You are a fast quiz assistant..." },
+                {
+                  inline_data: {
+                    mime_type: "image/jpeg",
+                    data: base64Image, // Use the stripped string here
+                  },
+                },
+                { text: "What is the correct answer?" },
+              ],
+            },
+          ],
+        }),
+      }
+    );
+  }
+  catch (err) {
+    console.error("Server error:", err.message);
+    res.status(500).json({ error: "Server error: " + err.message });
+  }
+})
+     */
+ 
+
+// ... rest of your code
+
+
 
 // Fallback
 app.get("*", (req, res) => {
